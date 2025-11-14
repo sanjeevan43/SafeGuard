@@ -3,13 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAbJ-1Mq_P8cP4c8I-NFwzEil1K7TA_708",
-  authDomain: "live-location-7d9ee.firebaseapp.com",
-  databaseURL: "https://live-location-7d9ee-default-rtdb.firebaseio.com",
-  projectId: "live-location-7d9ee",
-  storageBucket: "live-location-7d9ee.firebasestorage.app",
-  messagingSenderId: "779687667185",
-  appId: "1:779687667185:web:c47623363d772f21ac1050"
+  apiKey: "AIzaSyBqjGOHd2NG8rIDxI_2HziKv9KfSdTBqlc",
+  authDomain: "safeguard-93c61.firebaseapp.com",
+  projectId: "safeguard-93c61",
+  storageBucket: "safeguard-93c61.firebasestorage.app",
+  messagingSenderId: "39142244891",
+  appId: "1:39142244891:web:074be3d51f6aa30112eebe",
+  measurementId: "G-FGN13WHJ74"
 };
 
 const app = initializeApp(firebaseConfig);

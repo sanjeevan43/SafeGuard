@@ -5,6 +5,7 @@ import { getDatabase } from 'firebase/database';
 const firebaseConfig = {
   apiKey: "AIzaSyBqjGOHd2NG8rIDxI_2HziKv9KfSdTBqlc",
   authDomain: "safeguard-93c61.firebaseapp.com",
+  databaseURL: "https://safeguard-93c61-default-rtdb.firebaseio.com",
   projectId: "safeguard-93c61",
   storageBucket: "safeguard-93c61.firebasestorage.app",
   messagingSenderId: "39142244891",

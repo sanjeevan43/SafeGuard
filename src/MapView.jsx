@@ -280,7 +280,7 @@ const MapView = () => {
         </div>
       </div>
       
-      <LocationShare userLocation={position} />
+      <LocationShare userLocation={position ? { latitude: position[0], longitude: position[1] } : null} />
     </div>
   );
 };

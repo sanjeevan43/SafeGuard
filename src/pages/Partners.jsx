@@ -12,10 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
+import MessagingModal from '../components/ui/MessagingModal';
 import { getUser, addPartner, getPartners, updatePartner, deletePartner, findUserByInviteCode, findUserByEmail, sendPartnerInvitation, addHistoryEvent } from '../services/firebaseService';
 import locationService from '../services/locationService';
 import notificationService from '../services/notificationService';
 import emailService from '../services/emailService';
+import { demoPartners, addDemoPartners } from '../data/demoPartners';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet default markers
@@ -44,6 +46,8 @@ const Partners = () => {
   });
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [messagingPartner, setMessagingPartner] = useState(null);
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId') || 'demo-user';
 
@@ -93,11 +97,22 @@ const Partners = () => {
 
   const loadPartners = async () => {
     try {
-      const partnersData = await getPartners(userId);
+      let partnersData = await getPartners(userId);
+      
+      // Add demo partners if no partners exist
+      if (!partnersData || partnersData.length === 0) {
+        console.log('No partners found, adding demo partners...');
+        await addDemoPartners(userId, addPartner);
+        partnersData = await getPartners(userId) || demoPartners;
+      }
+      
       setPartners(partnersData);
       updateConnectionStats(partnersData);
     } catch (error) {
       console.error('Error loading partners:', error);
+      // Fallback to demo partners if Firebase fails
+      setPartners(demoPartners);
+      updateConnectionStats(demoPartners);
     }
   };
 
@@ -361,6 +376,16 @@ const Partners = () => {
     navigate('/sos');
   };
 
+  const openMessaging = (partner) => {
+    setMessagingPartner(partner);
+    setShowMessaging(true);
+  };
+
+  const closeMessaging = () => {
+    setShowMessaging(false);
+    setMessagingPartner(null);
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -473,6 +498,7 @@ const Partners = () => {
             <PartnerCard
               partner={partner}
               onClick={() => handlePartnerClick(partner)}
+              onMessage={openMessaging}
               userLocation={userLocation}
               calculateDistance={calculateDistance}
             />
@@ -644,13 +670,13 @@ const Partners = () => {
                     <span className="text-sm text-white/60 capitalize">{selectedPartner.status}</span>
                   </div>
                 </div>
-                <div className="relative h-48 rounded-lg overflow-hidden">
+                <div className="relative h-64 rounded-lg overflow-hidden border border-white/20">
                   <Button
                     size="icon"
-                    className="absolute top-2 right-2 z-10 bg-white/20 hover:bg-white/30 border-white/30 backdrop-blur-md"
+                    className="absolute top-3 right-3 z-[1000] bg-black/50 hover:bg-black/70 border-white/30 backdrop-blur-md"
                     onClick={() => {
                       if (window.partnerMap) {
-                        window.partnerMap.setView([selectedPartner.location.lat, selectedPartner.location.lng], 15);
+                        window.partnerMap.setView([selectedPartner.location.lat, selectedPartner.location.lng], 16);
                       }
                     }}
                   >
@@ -658,16 +684,30 @@ const Partners = () => {
                   </Button>
                   <MapContainer
                     center={[selectedPartner.location.lat, selectedPartner.location.lng]}
-                    zoom={15}
-                    className="h-full w-full"
-                    zoomControl={false}
+                    zoom={16}
+                    className="h-full w-full z-0"
+                    zoomControl={true}
+                    scrollWheelZoom={true}
                     whenCreated={(mapInstance) => {
                       window.partnerMap = mapInstance;
+                      // Add custom styling
+                      setTimeout(() => {
+                        mapInstance.invalidateSize();
+                      }, 100);
                     }}
                   >
-                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                    <TileLayer 
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
                     <Marker position={[selectedPartner.location.lat, selectedPartner.location.lng]}>
-                      <Popup>{selectedPartner.name}'s location</Popup>
+                      <Popup className="custom-popup">
+                        <div className="text-center">
+                          <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-8 h-8 rounded-full mx-auto mb-2" />
+                          <p className="font-semibold">{selectedPartner.name}</p>
+                          <p className="text-sm text-gray-600">{selectedPartner.status}</p>
+                        </div>
+                      </Popup>
                     </Marker>
                   </MapContainer>
                 </div>
@@ -715,6 +755,7 @@ const Partners = () => {
               <Button 
                 variant="outline" 
                 className="flex items-center justify-center border-white/20 bg-white/10 hover:bg-white/20 text-white"
+                onClick={() => openMessaging(selectedPartner)}
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Message
@@ -728,6 +769,14 @@ const Partners = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Messaging Modal */}
+      <MessagingModal
+        isOpen={showMessaging}
+        onClose={closeMessaging}
+        partner={messagingPartner}
+        currentUser={userData}
+      />
 
       <SOSFloatingButton onClick={handleSOSClick} />
       <NavbarBottom />

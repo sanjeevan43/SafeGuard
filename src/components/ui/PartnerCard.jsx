@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin, MessageCircle, Shield } from 'lucide-react';
 
-const PartnerCard = ({ partner, onClick, userLocation, calculateDistance }) => {
+const PartnerCard = ({ partner, onClick, onMessage, userLocation, calculateDistance }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'online': return 'bg-green-400';
@@ -73,7 +73,13 @@ const PartnerCard = ({ partner, onClick, userLocation, calculateDistance }) => {
             <span className="text-sm font-medium">{partner.safetyScore}</span>
           </div>
           
-          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+          <button 
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMessage && onMessage(partner);
+            }}
+          >
             <MessageCircle className="w-5 h-5 text-white/60" />
           </button>
         </div>

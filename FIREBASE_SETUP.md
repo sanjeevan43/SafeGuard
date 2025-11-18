@@ -1,88 +1,41 @@
-# Firebase Setup Guide
+# 🔧 Firebase Setup Guide
 
-## 1. Create Firebase Project
+## Fix Google Sign-in "Unauthorized Domain" Error
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Create a project"
-3. Enter project name: `live-location-share`
-4. Enable Google Analytics (optional)
-5. Click "Create project"
+### Step 1: Access Firebase Console
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project: **safeguard-93c61**
 
-## 2. Enable Authentication
+### Step 2: Add Authorized Domains
+1. Navigate to **Authentication** → **Settings** → **Authorized domains** tab
+2. Click **Add domain**
+3. Add these domains one by one:
 
-1. In Firebase Console, go to "Authentication"
-2. Click "Get started"
-3. Go to "Sign-in method" tab
-4. Enable "Email/Password" provider
-5. Click "Save"
-
-## 3. Setup Realtime Database
-
-1. Go to "Realtime Database"
-2. Click "Create database"
-3. Choose location (closest to your users)
-4. Start in "test mode" for now
-5. Click "Done"
-
-## 4. Configure Security Rules
-
-Replace the default rules with:
-
-```json
-{
-  "rules": {
-    "userLocations": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "locationShares": {
-      ".read": "auth != null",
-      ".write": "auth != null",
-      "$shareId": {
-        ".validate": "newData.hasChildren(['ownerEmail', 'viewerEmail', 'location', 'timestamp'])"
-      }
-    }
-  }
-}
+```
+safe-guard-bwuuip3bk-sanjeevans-projects-45db636c.vercel.app
+localhost
+127.0.0.1
 ```
 
-## 5. Get Configuration
+### Step 3: Save Changes
+1. Click **Save** after adding each domain
+2. Wait 5-10 minutes for changes to propagate
 
-1. Go to Project Settings (gear icon)
-2. Scroll to "Your apps" section
-3. Click "Web" icon to add web app
-4. Register app name: `live-location-web`
-5. Copy the configuration object
+### Step 4: Test Google Sign-in
+1. Go to your deployed app
+2. Try Google sign-in - it should work now!
 
-## 6. Update Firebase Config
+## Current Deployment URLs
+- **Vercel**: https://safe-guard-bwuuip3bk-sanjeevans-projects-45db636c.vercel.app
+- **Firebase**: https://safeguard-93c61.web.app
 
-Replace the config in `src/firebase.js`:
+## Alternative: Use Email/Password
+If you prefer not to set up Google sign-in:
+- Users can create accounts with email/password
+- All features work the same way
+- No additional setup required
 
-```javascript
-const firebaseConfig = {
-  apiKey: "your-actual-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-actual-app-id"
-};
-```
-
-## 7. Test the Application
-
-1. Run `npm run dev`
-2. Create an account with email/password
-3. Allow location access
-4. Share location with another email
-5. Login with the other email to see shared location
-
-## Security Notes
-
-- Users can only see locations shared specifically with their email
-- Location data is encrypted in transit
-- Users can control who sees their location
-- Locations are removed when user goes offline
+## Need Help?
+- Check browser console for detailed error messages
+- Ensure Firebase project is active
+- Verify domain spelling matches exactly

@@ -151,7 +151,19 @@ const AuthPage = () => {
       
     } catch (error) {
       console.error('Google sign-in error:', error);
-      setErrors({ general: 'Google sign-in failed. Please try again.' });
+      if (error.code === 'auth/unauthorized-domain') {
+        setErrors({ general: 'Please add this domain to Firebase authorized domains. See console for details.' });
+        console.log('🔧 FIREBASE SETUP REQUIRED:');
+        console.log('1. Go to Firebase Console: https://console.firebase.google.com');
+        console.log('2. Select your project: safeguard-93c61');
+        console.log('3. Go to Authentication > Settings > Authorized domains');
+        console.log('4. Add these domains:');
+        console.log('   - safe-guard-bwuuip3bk-sanjeevans-projects-45db636c.vercel.app');
+        console.log('   - localhost');
+        console.log('5. Save and try Google sign-in again');
+      } else {
+        setErrors({ general: 'Google sign-in failed. Please try again.' });
+      }
     }
     setLoading(false);
   };

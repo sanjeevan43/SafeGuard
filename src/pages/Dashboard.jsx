@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Battery, Gauge, Navigation, ToggleLeft, ToggleRight, Cloud, Sun, Users, Share2, Eye, Crosshair } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import MapSystem from '../components/ui/MapSystem';
 import GlassCard from '../components/ui/GlassCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -16,31 +15,7 @@ import emailService from '../services/emailService';
 import InvitationNotification from '../components/ui/InvitationNotification';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet default markers
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
 
-// Custom marker icons
-const userIcon = new L.Icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const partnerIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUiIGhlaWdodD0iNDEiIHZpZXdCb3g9IjAgMCAyNSA0MSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyLjUgMEMxOS40MDM2IDAgMjUgNS41OTY0NCAyNSAxMi41QzI1IDE5LjQwMzYgMTkuNDAzNiAyNSAxMi41IDI1QzUuNTk2NDQgMjUgMCAxOS40MDM2IDAgMTIuNUMwIDUuNTk2NDQgNS41OTY0NCAwIDEyLjUgMFoiIGZpbGw9IiMzQjgyRjYiLz4KPHBhdGggZD0iTTEyLjUgNDFMMjIuNSAyNUgyLjVMMTIuNSA0MVoiIGZpbGw9IiMzQjgyRjYiLz4KPC9zdmc+',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34]
-});
 
 const Dashboard = () => {
   const [isLiveSharing, setIsLiveSharing] = useState(false);
@@ -347,46 +322,18 @@ const Dashboard = () => {
           <Crosshair className="w-5 h-5 text-white" />
         </Button>
         
-        <MapContainer
-          center={[locationData.latitude, locationData.longitude]}
-          zoom={15}
-          className="h-full w-full rounded-t-3xl overflow-hidden"
-          zoomControl={true}
-          attributionControl={false}
-          scrollWheelZoom={true}
-          dragging={true}
-          touchZoom={true}
-          doubleClickZoom={true}
-          style={{ background: 'transparent' }}
-          whenCreated={(mapInstance) => {
-            window.dashboardMap = mapInstance;
+        <MapSystem
+          userLocation={{ lat: locationData.latitude, lng: locationData.longitude }}
+          partners={partners}
+          emergencyMode={false}
+          onLocationUpdate={(location) => {
+            setLocationData(prev => ({
+              ...prev,
+              latitude: location.lat,
+              longitude: location.lng
+            }));
           }}
-        >
-          <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.digitalglobe.com/">DigitalGlobe</a>'
-          />
-          <Marker position={[locationData.latitude, locationData.longitude]} icon={userIcon}>
-            <Popup>
-              <div className="text-center">
-                <strong>Your Location</strong><br/>
-                Lat: {locationData.latitude.toFixed(4)}<br/>
-                Lng: {locationData.longitude.toFixed(4)}
-              </div>
-            </Popup>
-          </Marker>
-          {partners.filter(p => p.status === 'sharing' && p.location).map(partner => (
-            <Marker key={partner.id} position={[partner.location.lat, partner.location.lng]} icon={partnerIcon}>
-              <Popup>
-                <div className="text-center">
-                  <strong>{partner.name}</strong><br/>
-                  Status: Live Sharing<br/>
-                  Last seen: {partner.lastSeen}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+        />
 
         {/* Header overlay */}
         <div className="absolute top-0 left-0 right-0 p-6 z-30">

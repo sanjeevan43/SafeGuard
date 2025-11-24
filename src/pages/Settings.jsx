@@ -13,7 +13,10 @@ import {
   Plus,
   Trash2,
   Copy,
-  Share2
+  Share2,
+  Map,
+  Layers,
+  Navigation
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUser, updateUser } from '../services/firebaseService';
@@ -36,7 +39,27 @@ const Settings = () => {
     email: '',
     phone: '',
     avatar: '',
-    emergencyContacts: []
+    emergencyContacts: [],
+    mapSettings: {
+      defaultStyle: 'street',
+      showPartners: true,
+      showSafetyRadius: true,
+      autoCenter: true,
+      offlineMode: false
+    },
+    notificationSettings: {
+      sosAlerts: true,
+      locationSharing: true,
+      emergencyContacts: true,
+      appUpdates: false,
+      soundEnabled: true,
+      vibrationEnabled: true
+    },
+    privacySettings: {
+      locationVisible: true,
+      shareWithPartners: true,
+      allowInvitations: true
+    }
   });
 
   const [activeModal, setActiveModal] = useState(null);
@@ -115,6 +138,26 @@ const Settings = () => {
     setEditData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSettingToggle = (category, field) => {
+    setEditData(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [field]: !prev[category]?.[field]
+      }
+    }));
+  };
+
+  const handleMapStyleChange = (style) => {
+    setEditData(prev => ({
+      ...prev,
+      mapSettings: {
+        ...prev.mapSettings,
+        defaultStyle: style
+      }
+    }));
+  };
+
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -170,6 +213,12 @@ const Settings = () => {
       title: 'Emergency Contacts',
       description: 'Add and manage emergency contacts',
       action: () => openModal('contacts')
+    },
+    {
+      icon: Map,
+      title: 'Map Settings',
+      description: 'Configure map display and behavior',
+      action: () => openModal('map')
     },
     {
       icon: Bell,
@@ -438,23 +487,193 @@ const Settings = () => {
         </div>
       </Modal>
 
+      {/* Map Settings Modal */}
+      <Modal
+        isOpen={activeModal === 'map'}
+        onClose={closeModal}
+        title="Map Settings"
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-white mb-3 flex items-center">
+              <Layers className="w-4 h-4 mr-2" />
+              Default Map Style
+            </h4>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { key: 'street', name: 'Street Map', desc: 'Standard road map with labels', icon: '🗺️' },
+                { key: 'satellite', name: 'Satellite View', desc: 'High-resolution satellite imagery', icon: '🛰️' },
+                { key: 'dark', name: 'Dark Mode', desc: 'Dark theme for night use', icon: '🌙' }
+              ].map(({ key, name, desc, icon }) => (
+                <button
+                  key={key}
+                  onClick={() => handleMapStyleChange(key)}
+                  className={`flex items-center p-3 rounded-lg text-left transition-colors ${
+                    editData.mapSettings?.defaultStyle === key
+                      ? 'bg-purple-600 text-white border-2 border-purple-400'
+                      : 'bg-white/10 text-white/80 hover:bg-white/20 border-2 border-transparent'
+                  }`}
+                >
+                  <span className="text-2xl mr-3">{icon}</span>
+                  <div className="flex-1">
+                    <div className="font-medium">{name}</div>
+                    <div className="text-xs opacity-80">{desc}</div>
+                  </div>
+                  {editData.mapSettings?.defaultStyle === key && (
+                    <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Map Preview */}
+          <div>
+            <h4 className="font-medium text-white mb-3">Preview</h4>
+            <div className="h-32 bg-white/5 rounded-lg border border-white/20 flex items-center justify-center">
+              <div className="text-center text-white/60">
+                <Map className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm">Map preview with {editData.mapSettings?.defaultStyle || 'street'} style</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-medium text-white flex items-center">
+              <Navigation className="w-4 h-4 mr-2" />
+              Display Options
+            </h4>
+            
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div>
+                <span className="text-white">Show Partners</span>
+                <p className="text-xs text-white/60">Display partner locations on map</p>
+              </div>
+              <button
+                onClick={() => handleSettingToggle('mapSettings', 'showPartners')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editData.mapSettings?.showPartners ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  editData.mapSettings?.showPartners ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div>
+                <span className="text-white">Safety Radius</span>
+                <p className="text-xs text-white/60">Show safety circle around your location</p>
+              </div>
+              <button
+                onClick={() => handleSettingToggle('mapSettings', 'showSafetyRadius')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editData.mapSettings?.showSafetyRadius ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  editData.mapSettings?.showSafetyRadius ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div>
+                <span className="text-white">Auto Center</span>
+                <p className="text-xs text-white/60">Automatically center map on your location</p>
+              </div>
+              <button
+                onClick={() => handleSettingToggle('mapSettings', 'autoCenter')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editData.mapSettings?.autoCenter ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  editData.mapSettings?.autoCenter ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Map Controls Help */}
+          <div className="bg-blue-600/20 border border-blue-600/30 rounded-lg p-3">
+            <h5 className="font-medium text-blue-400 mb-2 flex items-center">
+              <Navigation className="w-4 h-4 mr-2" />
+              Map Controls Guide
+            </h5>
+            <div className="text-xs text-blue-300 space-y-1">
+              <div className="flex justify-between">
+                <span>🎯 Center on location:</span>
+                <span>Purple button</span>
+              </div>
+              <div className="flex justify-between">
+                <span>👥 View all partners:</span>
+                <span>Blue button</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🗺️ Change map style:</span>
+                <span>Gray button (hover)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>⚙️ Quick toggles:</span>
+                <span>Top-left corner</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 mt-6">
+            <GradientButton variant="secondary" onClick={closeModal} className="flex-1">
+              Cancel
+            </GradientButton>
+            <GradientButton onClick={handleSave} className="flex-1" disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </GradientButton>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         isOpen={activeModal === 'notifications'}
         onClose={closeModal}
         title="Notification Settings"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <span className="text-white">SOS Alerts</span>
-            <input type="checkbox" defaultChecked className="w-5 h-5" />
+          {Object.entries({
+            sosAlerts: { label: 'SOS Alerts', desc: 'Get notified when SOS is triggered' },
+            locationSharing: { label: 'Location Sharing', desc: 'Alerts for location sharing requests' },
+            emergencyContacts: { label: 'Emergency Contacts', desc: 'Notifications from emergency contacts' },
+            appUpdates: { label: 'App Updates', desc: 'Receive update notifications' },
+            soundEnabled: { label: 'Sound Notifications', desc: 'Play sounds for alerts' },
+            vibrationEnabled: { label: 'Vibration', desc: 'Vibrate for notifications' }
+          }).map(([key, { label, desc }]) => (
+            <div key={key} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div>
+                <span className="text-white">{label}</span>
+                <p className="text-xs text-white/60">{desc}</p>
+              </div>
+              <button
+                onClick={() => handleSettingToggle('notificationSettings', key)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editData.notificationSettings?.[key] ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  editData.notificationSettings?.[key] ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          ))}
+          <div className="flex space-x-3 mt-6">
+            <GradientButton variant="secondary" onClick={closeModal} className="flex-1">
+              Cancel
+            </GradientButton>
+            <GradientButton onClick={handleSave} className="flex-1" disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </GradientButton>
           </div>
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <span className="text-white">Location Sharing</span>
-            <input type="checkbox" defaultChecked className="w-5 h-5" />
-          </div>
-          <GradientButton onClick={closeModal} className="w-full mt-4">
-            Save Settings
-          </GradientButton>
         </div>
       </Modal>
 
@@ -465,12 +684,34 @@ const Settings = () => {
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <span className="text-white">Enable Offline Mode</span>
-            <input type="checkbox" className="w-5 h-5" />
+            <div>
+              <span className="text-white">Enable Offline Mode</span>
+              <p className="text-xs text-white/60">Cache maps and data for offline use</p>
+            </div>
+            <button
+              onClick={() => handleSettingToggle('mapSettings', 'offlineMode')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                editData.mapSettings?.offlineMode ? 'bg-purple-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                editData.mapSettings?.offlineMode ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
           </div>
-          <GradientButton onClick={closeModal} className="w-full mt-4">
-            Save Settings
-          </GradientButton>
+          <div className="p-3 bg-blue-600/20 border border-blue-600/30 rounded-lg">
+            <p className="text-blue-400 text-sm">
+              💡 Offline mode will download map tiles and cache essential data for use without internet connection.
+            </p>
+          </div>
+          <div className="flex space-x-3 mt-6">
+            <GradientButton variant="secondary" onClick={closeModal} className="flex-1">
+              Cancel
+            </GradientButton>
+            <GradientButton onClick={handleSave} className="flex-1" disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </GradientButton>
+          </div>
         </div>
       </Modal>
 
@@ -480,13 +721,36 @@ const Settings = () => {
         title="Privacy & Security"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <span className="text-white">Location Visible to Partners</span>
-            <input type="checkbox" defaultChecked className="w-5 h-5" />
+          {Object.entries({
+            locationVisible: { label: 'Location Visible to Partners', desc: 'Allow partners to see your location' },
+            shareWithPartners: { label: 'Share Location Data', desc: 'Share location history with connected partners' },
+            allowInvitations: { label: 'Allow Partner Invitations', desc: 'Receive partner connection requests' }
+          }).map(([key, { label, desc }]) => (
+            <div key={key} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div>
+                <span className="text-white">{label}</span>
+                <p className="text-xs text-white/60">{desc}</p>
+              </div>
+              <button
+                onClick={() => handleSettingToggle('privacySettings', key)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  editData.privacySettings?.[key] ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  editData.privacySettings?.[key] ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          ))}
+          <div className="flex space-x-3 mt-6">
+            <GradientButton variant="secondary" onClick={closeModal} className="flex-1">
+              Cancel
+            </GradientButton>
+            <GradientButton onClick={handleSave} className="flex-1" disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </GradientButton>
           </div>
-          <GradientButton onClick={closeModal} className="w-full mt-4">
-            Save Settings
-          </GradientButton>
         </div>
       </Modal>
 

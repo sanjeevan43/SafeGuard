@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Battery, Gauge, Navigation, ToggleLeft, ToggleRight, Cloud, Sun, Users, Share2, Eye, Crosshair } from 'lucide-react';
-import MapSystem from '../components/ui/MapSystem';
+import SimpleMapView from '../components/ui/SimpleMapView';
 import GlassCard from '../components/ui/GlassCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -13,7 +13,7 @@ import { getUser, updateUser, getPartners, getPendingInvitations, acceptPartnerI
 import locationService from '../services/locationService';
 import emailService from '../services/emailService';
 import InvitationNotification from '../components/ui/InvitationNotification';
-import 'leaflet/dist/leaflet.css';
+
 
 
 
@@ -148,7 +148,7 @@ const Dashboard = () => {
 
   const startLocationTracking = async () => {
     try {
-      // Get initial position
+      // Get initial position with timeout handling
       const position = await locationService.getCurrentPosition();
       setLocationData(prev => ({
         ...prev,
@@ -157,51 +157,52 @@ const Dashboard = () => {
         accuracy: position.accuracy,
         speed: position.speed || 0
       }));
+    } catch (error) {
+      // Use default location if geolocation fails
+    }
 
-      // Start watching position
-      locationService.startWatching(async (position, error) => {
-        if (error) {
-          console.error('Location error:', error);
-          return;
+    // Start watching position with error handling
+    locationService.startWatching(async (position, error) => {
+      if (error) {
+        return;
+      }
+      
+      if (position) {
+        setLocationData(prev => ({
+          ...prev,
+          latitude: position.lat,
+          longitude: position.lng,
+          accuracy: position.accuracy,
+          speed: position.speed || 0
+        }));
+
+        // Share location if sharing is enabled
+        if (isLiveSharing) {
+          await locationService.shareLocationWithPartners().catch(err => 
+            console.warn('Location sharing failed:', err.message)
+          );
         }
+      }
+    });
+
+    // Update battery info if available
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(battery => {
+        setLocationData(prev => ({
+          ...prev,
+          battery: Math.floor(battery.level * 100)
+        }));
         
-        if (position) {
-          setLocationData(prev => ({
-            ...prev,
-            latitude: position.lat,
-            longitude: position.lng,
-            accuracy: position.accuracy,
-            speed: position.speed || 0,
-            battery: navigator.getBattery ? prev.battery : Math.floor(Math.random() * 100)
-          }));
-
-          // Share location if sharing is enabled
-          if (isLiveSharing) {
-            await locationService.shareLocationWithPartners();
-          }
-        }
-      });
-
-      // Update battery info if available
-      if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
+        battery.addEventListener('levelchange', () => {
           setLocationData(prev => ({
             ...prev,
             battery: Math.floor(battery.level * 100)
           }));
-          
-          battery.addEventListener('levelchange', () => {
-            setLocationData(prev => ({
-              ...prev,
-              battery: Math.floor(battery.level * 100)
-            }));
-          });
         });
-      }
-      
-    } catch (error) {
-      console.error('Failed to start location tracking:', error);
-      // Fallback to default location
+      }).catch(() => {
+        // Battery API not supported, use default value
+        setLocationData(prev => ({ ...prev, battery: 85 }));
+      });
     }
   };
 
@@ -322,18 +323,9 @@ const Dashboard = () => {
           <Crosshair className="w-5 h-5 text-white" />
         </Button>
         
-        <MapSystem
-          userLocation={{ lat: locationData.latitude, lng: locationData.longitude }}
-          partners={partners}
-          emergencyMode={false}
-          onLocationUpdate={(location) => {
-            setLocationData(prev => ({
-              ...prev,
-              latitude: location.lat,
-              longitude: location.lng
-            }));
-          }}
-        />
+        <div className="relative h-full">
+          <SimpleMapView />
+        </div>
 
         {/* Header overlay */}
         <div className="absolute top-0 left-0 right-0 p-6 z-30">

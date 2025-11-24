@@ -29,9 +29,9 @@ class LocationService {
         },
         (error) => reject(error),
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 300000
         }
       );
     });
@@ -59,13 +59,12 @@ class LocationService {
           this.callbacks.forEach(cb => cb(this.currentPosition));
         },
         (error) => {
-          console.error('Location error:', error);
           this.callbacks.forEach(cb => cb(null, error));
         },
         {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 30000
+          enableHighAccuracy: false,
+          timeout: 3000,
+          maximumAge: 60000
         }
       );
     }

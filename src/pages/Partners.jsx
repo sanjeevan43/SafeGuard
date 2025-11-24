@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
 import MessagingModal from '../components/ui/MessagingModal';
+import PartnerMiniMap from '../components/ui/PartnerMiniMap';
 import { getUser, addPartner, getPartners, updatePartner, deletePartner, findUserByInviteCode, findUserByEmail, sendPartnerInvitation, addHistoryEvent } from '../services/firebaseService';
 import locationService from '../services/locationService';
 import notificationService from '../services/notificationService';
@@ -48,6 +49,7 @@ const Partners = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [showMessaging, setShowMessaging] = useState(false);
   const [messagingPartner, setMessagingPartner] = useState(null);
+  const [expandedMaps, setExpandedMaps] = useState({});
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId') || 'demo-user';
 
@@ -386,6 +388,13 @@ const Partners = () => {
     setMessagingPartner(null);
   };
 
+  const toggleMapExpansion = (partnerId) => {
+    setExpandedMaps(prev => ({
+      ...prev,
+      [partnerId]: !prev[partnerId]
+    }));
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -494,6 +503,7 @@ const Partners = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
+            className="space-y-3"
           >
             <PartnerCard
               partner={partner}
@@ -502,6 +512,15 @@ const Partners = () => {
               userLocation={userLocation}
               calculateDistance={calculateDistance}
             />
+            
+            {/* Individual Partner Map */}
+            {partner.location && partner.connectionStatus === 'connected' && (
+              <PartnerMiniMap
+                partner={partner}
+                isExpanded={expandedMaps[partner.id]}
+                onToggleExpand={() => toggleMapExpansion(partner.id)}
+              />
+            )}
           </motion.div>
         ))}
 
@@ -659,59 +678,11 @@ const Partners = () => {
 
             {/* Partner Location Map */}
             {selectedPartner.location && selectedPartner.connectionStatus === 'connected' && (
-              <Card className="bg-white/10 border-white/20 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-white">Current Location</h4>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      selectedPartner.status === 'online' ? 'bg-green-400' :
-                      selectedPartner.status === 'sharing' ? 'bg-blue-400' : 'bg-gray-400'
-                    }`} />
-                    <span className="text-sm text-white/60 capitalize">{selectedPartner.status}</span>
-                  </div>
-                </div>
-                <div className="relative h-64 rounded-lg overflow-hidden border border-white/20">
-                  <Button
-                    size="icon"
-                    className="absolute top-3 right-3 z-[1000] bg-black/50 hover:bg-black/70 border-white/30 backdrop-blur-md"
-                    onClick={() => {
-                      if (window.partnerMap) {
-                        window.partnerMap.setView([selectedPartner.location.lat, selectedPartner.location.lng], 16);
-                      }
-                    }}
-                  >
-                    <Crosshair className="w-4 h-4 text-white" />
-                  </Button>
-                  <MapContainer
-                    center={[selectedPartner.location.lat, selectedPartner.location.lng]}
-                    zoom={16}
-                    className="h-full w-full z-0"
-                    zoomControl={true}
-                    scrollWheelZoom={true}
-                    whenCreated={(mapInstance) => {
-                      window.partnerMap = mapInstance;
-                      // Add custom styling
-                      setTimeout(() => {
-                        mapInstance.invalidateSize();
-                      }, 100);
-                    }}
-                  >
-                    <TileLayer 
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    <Marker position={[selectedPartner.location.lat, selectedPartner.location.lng]}>
-                      <Popup className="custom-popup">
-                        <div className="text-center">
-                          <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-8 h-8 rounded-full mx-auto mb-2" />
-                          <p className="font-semibold">{selectedPartner.name}</p>
-                          <p className="text-sm text-gray-600">{selectedPartner.status}</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
-                </div>
-              </Card>
+              <PartnerMiniMap
+                partner={selectedPartner}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+              />
             )}
 
             {/* Status Controls */}
